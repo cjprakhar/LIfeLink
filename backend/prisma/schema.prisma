@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String       @id
+  name       String?
+  phone      String?
+  createdAt  DateTime     @default(now())
+  sosRequests SosRequest[]
+  dispatches Dispatch[]
+}
+
+model Ambulance {
+  id             String       @id
+  unitNumber     String?
+  driverName     String?
+  crew           String[]
+  vehiclePlate   String?
+  baseStation    String?
+  equipmentLevel String?
+  phone          String?
+  latitude       Float
+  longitude      Float
+  isAvailable    Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  sosRequests    SosRequest[]
+  dispatches     Dispatch[]
+
+  @@index([isAvailable])
+}
+
+model SosRequest {
+  id           String       @id
+  userId       String
+  latitude     Float
+  longitude    Float
+  description  String?
+  timestamp    DateTime     @default(now())
+  status       String       @default("pending")
+  ambulanceId  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  user         User         @relation(fields: [userId], references: [id])
+  ambulance    Ambulance?   @relation(fields: [ambulanceId], references: [id])
+  dispatch     Dispatch?
+
+  @@index([status])
+  @@index([timestamp])
+}
+
+model Dispatch {
+  id                   String      @id
+  alertId              String      @unique
+  ambulanceId          String
+  userId               String
+  pickupLatitude       Float
+  pickupLongitude      Float
+  ambulanceLatitude    Float
+  ambulanceLongitude   Float
+  distanceKm           Float
+  status               String      @default("dispatched")
+  createdAt            DateTime    @default(now())
+  completedAt          DateTime?
+  alert                SosRequest  @relation(fields: [alertId], references: [id])
+  ambulance            Ambulance   @relation(fields: [ambulanceId], references: [id])
+  user                 User        @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([createdAt])
+}
